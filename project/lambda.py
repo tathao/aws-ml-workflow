@@ -37,10 +37,10 @@ import boto3
 
 sagemaker_runtime = boto3.client('runtime.sagemaker')
 
-ENDPOINT = "image-classification-2024-11-13-09-54-21-853"
+ENDPOINT = "image-classification-2024-11-13-17-24-21-741"
 
 def lambda_handler(event, context):
-    image = base64.b64decode(event["body"]["image_data"])
+    image = base64.b64decode(event["image_data"])
     response = sagemaker_runtime.invoke_endpoint(
         EndpointName=ENDPOINT,
         ContentType='image/png',
@@ -49,23 +49,21 @@ def lambda_handler(event, context):
 
     result = response['Body'].read().decode('utf-8')
 
-    event["inferences"] = result
+    event["inferences"] = json.loads(result)
     return {
-        'statusCode': 200,
-        'body': json.dumps(event)
+        "inferences": event["inferences"]
     }
 
 
 import json
 
-THRESHOLD = .93
+THRESHOLD = .83
 
 def lambda_handler(event, context):
     
     # Grab the inferences from the event
-    body = json.loads(event["body"])
-    inferences = json.loads(body["inferences"])
-    
+    inferences = event["inferences"]
+
     # Check if any values in our inferences are above THRESHOLD
     meets_threshold = max(inferences) > THRESHOLD
     
@@ -79,4 +77,4 @@ def lambda_handler(event, context):
     return {
         'statusCode': 200,
         'body': json.dumps(event)
-    }
+        }
